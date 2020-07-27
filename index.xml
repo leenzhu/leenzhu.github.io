@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>方内俗人</title>
+    <link>https://leenzhu.com/</link>
+    <description>Recent content on 方内俗人</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Wed, 21 Aug 2019 20:27:06 +0800</lastBuildDate>
+    
+	<atom:link href="https://leenzhu.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>关于</title>
+      <link>https://leenzhu.com/about/</link>
+      <pubDate>Wed, 21 Aug 2019 20:27:06 +0800</pubDate>
+      
+      <guid>https://leenzhu.com/about/</guid>
+      <description>关于我   我现在其实掌握的技能还蛮多的，毕竟要靠这些技能吃饭。    系统： Windows/Linux    编辑器： Emacs/VIM    编程语言： C/Go/Python/Shell    编程方向：通信，安全，民用互联网？其它……    其它：……    其它的内容比较多，就不一一列举了。 工作经历     TCP/IP 协议还原    SMTP/POP/HTTP/ICQ 协议还原    LwIP 协议栈二次开发    ETL 数据处理    主流WEB邮件收取，多模匹配    CLI/SNMP/NETCONF 配置管理   联系方式     Github: https://github.</description>
+    </item>
+    
+    <item>
+      <title>工欲善其事，必先利其器</title>
+      <link>https://leenzhu.com/posts/tech/tools/</link>
+      <pubDate>Sun, 31 Dec 2017 23:09:51 +0800</pubDate>
+      
+      <guid>https://leenzhu.com/posts/tech/tools/</guid>
+      <description>&lt;p&gt;
+本文将罗列所有我曾经使用过的工具，包括操作系统及相关软件。
+&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
