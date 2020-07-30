@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>tools on 方内俗人</title>
+    <title>tools on Leen Zhu</title>
     <link>https://leenzhu.com/tags/tools/</link>
-    <description>Recent content in tools on 方内俗人</description>
+    <description>Recent content in tools on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
     <lastBuildDate>Sun, 31 Dec 2017 23:09:51 +0800</lastBuildDate>
@@ -18,8 +18,7 @@
       
       <guid>https://leenzhu.com/posts/tech/tools/</guid>
       <description>&lt;p&gt;
-本文将罗列所有我曾经使用过的工具，包括操作系统及相关软件。
-&lt;/p&gt;</description>
+本文将罗列所有我曾经使用过的工具，包括操作系统及相关软件。&lt;/p&gt;</description>
     </item>
     
   </channel>

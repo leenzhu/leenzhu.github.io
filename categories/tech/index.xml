@@ -1,15 +1,27 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Tech on 方内俗人</title>
+    <title>Tech on Leen Zhu</title>
     <link>https://leenzhu.com/categories/tech/</link>
-    <description>Recent content in Tech on 方内俗人</description>
+    <description>Recent content in Tech on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sun, 31 Dec 2017 23:09:51 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 30 Jul 2020 09:04:41 +0800</lastBuildDate>
     
 	<atom:link href="https://leenzhu.com/categories/tech/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>win10-启用休眠</title>
+      <link>https://leenzhu.com/posts/tech/win10-hibernate/</link>
+      <pubDate>Thu, 30 Jul 2020 09:04:41 +0800</pubDate>
+      
+      <guid>https://leenzhu.com/posts/tech/win10-hibernate/</guid>
+      <description>&lt;p&gt;
+Win10 的强制更新非常让人讨厌，无论如何配置都无法禁用更新。尤其是有时候需要快速关机的时候后，必须要先更新才行。这个时候其实可以启用休眠功能，这样就不需要更新了。&lt;/p&gt;
+&lt;p&gt;
+&lt;img src=&#34;.assets/20200730_092803.png&#34; alt=&#34;.assets/20200730_092803.png&#34; title=&#34;.assets/20200730_092803.png&#34; /&gt;&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>工欲善其事，必先利其器</title>
@@ -18,8 +30,7 @@
       
       <guid>https://leenzhu.com/posts/tech/tools/</guid>
       <description>&lt;p&gt;
-本文将罗列所有我曾经使用过的工具，包括操作系统及相关软件。
-&lt;/p&gt;</description>
+本文将罗列所有我曾经使用过的工具，包括操作系统及相关软件。&lt;/p&gt;</description>
     </item>
     
   </channel>
