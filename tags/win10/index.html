@@ -116,7 +116,7 @@
         
 imgs = document.getElementsByTagName("img")
 for (img of imgs) {
-    if (img.alt.startsWith(".assets")) {
+    if (img.alt.startsWith("assets")) {
        img.src = "/"+img.alt;
     }
 }
