@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>win10 on Leen Zhu</title>
-    <link>https://leenzhu.com/tags/win10/</link>
+    <link>https://leenzhu.com/tags/win10.html</link>
     <description>Recent content in win10 on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
@@ -13,10 +13,10 @@
     
     <item>
       <title>win10-启用休眠</title>
-      <link>https://leenzhu.com/posts/tech/win10-hibernate/</link>
+      <link>https://leenzhu.com/posts/tech/win10-hibernate.html</link>
       <pubDate>Thu, 30 Jul 2020 09:04:41 +0800</pubDate>
       
-      <guid>https://leenzhu.com/posts/tech/win10-hibernate/</guid>
+      <guid>https://leenzhu.com/posts/tech/win10-hibernate.html</guid>
       <description>&lt;p&gt;
 Win10 的强制更新非常让人讨厌，无论如何配置都无法禁用更新。尤其是有时候需要快速关机的时候后，必须要先更新才行。这个时候其实可以启用休眠功能，这样就不需要更新了。&lt;/p&gt;
 &lt;p&gt;

@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Leen Zhu</title>
-    <link>https://leenzhu.com/categories/</link>
+    <link>https://leenzhu.com/categories.html</link>
     <description>Recent content in Categories on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
@@ -13,10 +13,10 @@
     
     <item>
       <title>Tech</title>
-      <link>https://leenzhu.com/categories/tech/</link>
+      <link>https://leenzhu.com/categories/tech.html</link>
       <pubDate>Thu, 30 Jul 2020 09:04:41 +0800</pubDate>
       
-      <guid>https://leenzhu.com/categories/tech/</guid>
+      <guid>https://leenzhu.com/categories/tech.html</guid>
       <description></description>
     </item>
     

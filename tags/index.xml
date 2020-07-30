@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Leen Zhu</title>
-    <link>https://leenzhu.com/tags/</link>
+    <link>https://leenzhu.com/tags.html</link>
     <description>Recent content in Tags on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
@@ -13,19 +13,19 @@
     
     <item>
       <title>win10</title>
-      <link>https://leenzhu.com/tags/win10/</link>
+      <link>https://leenzhu.com/tags/win10.html</link>
       <pubDate>Thu, 30 Jul 2020 09:04:41 +0800</pubDate>
       
-      <guid>https://leenzhu.com/tags/win10/</guid>
+      <guid>https://leenzhu.com/tags/win10.html</guid>
       <description></description>
     </item>
     
     <item>
       <title>tools</title>
-      <link>https://leenzhu.com/tags/tools/</link>
+      <link>https://leenzhu.com/tags/tools.html</link>
       <pubDate>Sun, 31 Dec 2017 23:09:51 +0800</pubDate>
       
-      <guid>https://leenzhu.com/tags/tools/</guid>
+      <guid>https://leenzhu.com/tags/tools.html</guid>
       <description></description>
     </item>
     
