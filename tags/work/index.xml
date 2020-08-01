@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>work on Leen Zhu</title>
+    <link>https://leenzhu.com/tags/work.html</link>
+    <description>Recent content in work on Leen Zhu</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Thu, 09 Jul 2020 15:51:47 +0800</lastBuildDate>
+    
+	<atom:link href="https://leenzhu.com/tags/work/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>vpp-vec</title>
+      <link>https://leenzhu.com/posts/tech/vpp-vec.html</link>
+      <pubDate>Thu, 09 Jul 2020 15:51:47 +0800</pubDate>
+      
+      <guid>https://leenzhu.com/posts/tech/vpp-vec.html</guid>
+      <description>&lt;p&gt;
+&lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 &lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 的定义以及其对应的操作。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

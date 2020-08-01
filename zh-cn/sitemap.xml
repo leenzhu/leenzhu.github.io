@@ -82,6 +82,27 @@
   </url>
   
   <url>
+    <loc>https://leenzhu.com/tags/vpp.html</loc>
+    <lastmod>2020-07-09T15:51:47+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://leenzhu.com/posts/tech/vpp-vec.html</loc>
+    <lastmod>2020-07-09T15:51:47+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://leenzhu.com/tags/work.html</loc>
+    <lastmod>2020-07-09T15:51:47+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://leenzhu.com/about.html</loc>
     <lastmod>2019-08-21T20:27:06+08:00</lastmod>
     <changefreq>weekly</changefreq>
