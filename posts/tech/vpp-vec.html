@@ -10,7 +10,7 @@
       content="leen"/>
 
 
-<meta name="description" content=" vec 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 vec 的定义以及其对应的操作。
+<meta name="description" content=" vec 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 vec 的定义以及其对应的操作。本文分析的是 VPP stable/1609 的代码。
 "/>
 
 
@@ -26,7 +26,7 @@
 
 <title>vpp-vec &middot; Leen Zhu</title>
 
-<link rel="shortcut icon" href="/images/favicon.ico"/>
+<link rel="shortcut icon" href="/image/logo.png"/>
 
 <link rel="stylesheet" href="/css/normalize.css"/>
 <link rel="stylesheet" href="/css/chroma.css"/>
@@ -79,7 +79,7 @@
     <hr/>
     <div class="post-content">
     <p>
-<code class="verbatim">vec</code> 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 <code class="verbatim">vec</code> 的定义以及其对应的操作。</p>
+<code class="verbatim">vec</code> 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 <code class="verbatim">vec</code> 的定义以及其对应的操作。本文分析的是 VPP stable/1609 的代码。</p>
 <div id="outline-container-headline-1" class="outline-2">
 <h2 id="headline-1">
 vec 简介
@@ -102,8 +102,6 @@ vec 简介
 用户可以通过 <code class="verbatim">vec_*_aligned</code> 宏来指定元素对齐。 </p>
 <p>
 <strong><strong>注</strong></strong> ： 用户自定义的头默认对齐到 <code class="verbatim">sizeof (vec_header_t)</code> 边界， <code class="verbatim">vec_*_aligned</code> 是用来指定数据对齐的。头部和数据都有对齐的情况如图：</p>
-<p>
-<img src="assets/20200801_164604.png" alt="assets/20200801_164604.png" title="assets/20200801_164604.png" /></p>
 <p>
 vector元素可以是任何C语言的类型，比如int, dobule, struct等。对于构建在vector之上的数据结构也是成立的。比如heap, pool等。</p>
 <p>
@@ -663,16 +661,697 @@ vec_copy(DST,SRC)
 </h3>
 <div id="outline-text-headline-38" class="outline-text-3">
 <div class="src src-c">
-<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_copy(DST,SRC) clib_memcpy (DST, SRC, vec_len (DST) * \
-</span><span style="color:#007020">                         sizeof ((DST)[0]))</span></code></pre></div>
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_copy(DST,SRC) clib_memcpy (DST, SRC, vec_len (DST) * sizeof ((DST)[0]))</span></code></pre></div>
 </div>
+<p>
+该宏函数的功能是将SRC的vector内容复制到DST的vector中。这里假设 sizeof(SRC[0]) == sizeof(DST[0])。</p>
 </div>
 </div>
 <div id="outline-container-headline-39" class="outline-3">
 <h3 id="headline-39">
-vec_resize_allocate_memory (…)
+vec_clone(NEW_V,OLD_V)
 </h3>
 <div id="outline-text-headline-39" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_clone(NEW_V,OLD_V)                          \
+</span><span style="color:#007020">  do {                                        \
+</span><span style="color:#007020">    (NEW_V) = 0;                                  \
+</span><span style="color:#007020">    (NEW_V) = _vec_resize ((NEW_V), vec_len (OLD_V),              \
+</span><span style="color:#007020">               vec_len (OLD_V) * sizeof ((NEW_V)[0]), (0), (0));  \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数会新生成一个vector对象，该对象的长度与OLD_V相同，每个元素的大小与NEW_V相同。（尚不明确该宏的功能使用场景）。</p>
+</div>
+</div>
+<div id="outline-container-headline-40" class="outline-3">
+<h3 id="headline-40">
+vec_validate_ha(V,I,H,A)
+</h3>
+<div id="outline-text-headline-40" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_ha(V,I,H,A)                    \
+</span><span style="color:#007020">  do {                                    \
+</span><span style="color:#007020">    word _v(i) = (I);                         \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                     \
+</span><span style="color:#007020">    if (_v(i) &gt;= _v(l))                           \
+</span><span style="color:#007020">      {                                   \
+</span><span style="color:#007020">        vec_resize_ha ((V), 1 + (_v(i) - _v(l)), (H), (A));       \
+</span><span style="color:#007020">        </span><span style="color:#60a0b0;font-style:italic">/* Must zero new space since user may have previously     \
+</span><span style="color:#60a0b0;font-style:italic">       used e.g. _vec_len (v) -= 10 */</span><span style="color:#007020">                \
+</span><span style="color:#007020">        memset ((V) + _v(l), 0, (1 + (_v(i) - _v(l))) * sizeof ((V)[0])); \
+</span><span style="color:#007020">      }                                   \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数用来确保指定的vector有足够的长度可以容纳 <code class="verbatim">I</code> 个元素。如果空间不够将会重新申请，同时对未使用的元素（包括新申请）部分进行清零。（既然vec_len(v) 决定了有效元素，为何要对未使用的元素清零？）</p>
+</div>
+</div>
+<div id="outline-container-headline-41" class="outline-3">
+<h3 id="headline-41">
+vec_validate(V,I)
+</h3>
+<div id="outline-text-headline-41" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate(V,I)           vec_validate_ha(V,I,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，只是忽略用户自定义头部和数据对齐的字节。</p>
+</div>
+</div>
+<div id="outline-container-headline-42" class="outline-3">
+<h3 id="headline-42">
+vec_validate_aligned(V,I,A)
+</h3>
+<div id="outline-text-headline-42" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_aligned(V,I,A) vec_validate_ha(V,I,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同 <code class="verbatim">vec_validate_ha</code> ，只是忽略用户自定义头部。</p>
+</div>
+</div>
+<div id="outline-container-headline-43" class="outline-3">
+<h3 id="headline-43">
+vec_validate_init_empty_ha(V,I,INIT,H,A)
+</h3>
+<div id="outline-text-headline-43" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_init_empty_ha(V,I,INIT,H,A)        \
+</span><span style="color:#007020">  do {                                \
+</span><span style="color:#007020">    word _v(i) = (I);                     \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                 \
+</span><span style="color:#007020">    if (_v(i) &gt;= _v(l))                       \
+</span><span style="color:#007020">      {                               \
+</span><span style="color:#007020">        vec_resize_ha ((V), 1 + (_v(i) - _v(l)), (H), (A));   \
+</span><span style="color:#007020">        while (_v(l) &lt;= _v(i))                    \
+</span><span style="color:#007020">      {                           \
+</span><span style="color:#007020">        (V)[_v(l)] = (INIT);                  \
+</span><span style="color:#007020">        _v(l)++;                      \
+</span><span style="color:#007020">      }                           \
+</span><span style="color:#007020">      }                               \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同 <code class="verbatim">vec_validate_ha</code> ， 但是对新扩容的元素赋初值，初值由 <code class="verbatim">INIT</code> 提供。</p>
+</div>
+</div>
+<div id="outline-container-headline-44" class="outline-3">
+<h3 id="headline-44">
+vec_validate_init_empty(V,I,INIT)
+</h3>
+<div id="outline-text-headline-44" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_init_empty(V,I,INIT) \
+</span><span style="color:#007020">    vec_validate_init_empty_ha(V,I,INIT,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是不处理自定义头部和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-45" class="outline-3">
+<h3 id="headline-45">
+ec_validate_init_empty_aligned(V,I,A)
+</h3>
+<div id="outline-text-headline-45" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_init_empty_aligned(V,I,A) \
+</span><span style="color:#007020">    vec_validate_init_empty_ha(V,I,INIT,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同 <code class="verbatim">validate_init_empty_ha</code> ，处理数据对齐，但是不处理自定义头部字节。</p>
+</div>
+</div>
+<div id="outline-container-headline-46" class="outline-3">
+<h3 id="headline-46">
+vec_add1_ha(V,E,H,A)
+</h3>
+<div id="outline-text-headline-46" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add1_ha(V,E,H,A)                        \
+</span><span style="color:#007020">  do {                                    \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                     \
+</span><span style="color:#007020">    V = _vec_resize ((V), 1, (_v(l) + 1) * sizeof ((V)[0]), (H), (A));    \
+</span><span style="color:#007020">    (V)[_v(l)] = (E);                         \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是在vector的尾部扩容一个元素，如果空间不够将对空间进行扩容。</p>
+</div>
+</div>
+<div id="outline-container-headline-47" class="outline-3">
+<h3 id="headline-47">
+vec_add1(V,E)
+</h3>
+<div id="outline-text-headline-47" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add1(V,E)           vec_add1_ha(V,E,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能同上，但是不处理用户自定义的头和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-48" class="outline-3">
+<h3 id="headline-48">
+vec_add1_aligned(V,E,A) vec_add1_ha(V,E,0,A)
+</h3>
+<div id="outline-text-headline-48" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add1_aligned(V,E,A) vec_add1_ha(V,E,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能同上，但是需要处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-49" class="outline-3">
+<h3 id="headline-49">
+vec_add2_ha(V,P,N,H,A)
+</h3>
+<div id="outline-text-headline-49" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add2_ha(V,P,N,H,A)                          \
+</span><span style="color:#007020">  do {                                        \
+</span><span style="color:#007020">    word _v(n) = (N);                             \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                         \
+</span><span style="color:#007020">    V = _vec_resize ((V), _v(n), (_v(l) + _v(n)) * sizeof ((V)[0]), (H), (A));    \
+</span><span style="color:#007020">    P = (V) + _v(l);                              \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是在vector的尾部扩容N个元素，P表示新增（N个）元素的首地址，V表示全部元素的首地址。</p>
+</div>
+</div>
+<div id="outline-container-headline-50" class="outline-3">
+<h3 id="headline-50">
+vec_add2(V,P,N)
+</h3>
+<div id="outline-text-headline-50" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add2(V,P,N)           vec_add2_ha(V,P,N,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能同上， 只是不处理用户自定义头部和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-51" class="outline-3">
+<h3 id="headline-51">
+vec_add2_aligned(V,P,N,A)
+</h3>
+<div id="outline-text-headline-51" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add2_aligned(V,P,N,A) vec_add2_ha(V,P,N,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-52" class="outline-3">
+<h3 id="headline-52">
+vec_add_ha(V,E,N,H,A)
+</h3>
+<div id="outline-text-headline-52" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add_ha(V,E,N,H,A)                           \
+</span><span style="color:#007020">  do {                                        \
+</span><span style="color:#007020">    word _v(n) = (N);                             \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                         \
+</span><span style="color:#007020">    V = _vec_resize ((V), _v(n), (_v(l) + _v(n)) * sizeof ((V)[0]), (H), (A));    \
+</span><span style="color:#007020">    clib_memcpy ((V) + _v(l), (E), _v(n) * sizeof ((V)[0]));          \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是将N个元素E追加到vectro V的尾部。</p>
+</div>
+</div>
+<div id="outline-container-headline-53" class="outline-3">
+<h3 id="headline-53">
+vec_add(V,E,N)
+</h3>
+<div id="outline-text-headline-53" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add(V,E,N)           vec_add_ha(V,E,N,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是不处理用户自定义头部和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-54" class="outline-3">
+<h3 id="headline-54">
+vec_add_aligned(V,E,N,A)
+</h3>
+<div id="outline-text-headline-54" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_add_aligned(V,E,N,A) vec_add_ha(V,E,N,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-55" class="outline-3">
+<h3 id="headline-55">
+vec_pop(V)
+</h3>
+<div id="outline-text-headline-55" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_pop(V)              \
+</span><span style="color:#007020">  ({                      \
+</span><span style="color:#007020">    uword _v(l) = vec_len (V);            \
+</span><span style="color:#007020">    ASSERT (_v(l) &gt; 0);               \
+</span><span style="color:#007020">    _v(l) -= 1;                   \
+</span><span style="color:#007020">    _vec_len (V) = _v (l);            \
+</span><span style="color:#007020">    (V)[_v(l)];                   \
+</span><span style="color:#007020">  })</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是从vector中返回最后一个元素，同时减少vector长度。</p>
+</div>
+</div>
+<div id="outline-container-headline-56" class="outline-3">
+<h3 id="headline-56">
+vec_pop2(V,E)
+</h3>
+<div id="outline-text-headline-56" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_pop2(V,E)               \
+</span><span style="color:#007020">  ({                      \
+</span><span style="color:#007020">    uword _v(l) = vec_len (V);            \
+</span><span style="color:#007020">    if (_v(l) &gt; 0) (E) = vec_pop (V);     \
+</span><span style="color:#007020">    _v(l) &gt; 0;                    \
+</span><span style="color:#007020">  })</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是通过E来获取vector最后一个元素的值，但是不改变vector的长度。</p>
+</div>
+</div>
+<div id="outline-container-headline-57" class="outline-3">
+<h3 id="headline-57">
+vec_insert_init_empty_ha(V,N,M,INIT,H,A)
+</h3>
+<div id="outline-text-headline-57" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_init_empty_ha(V,N,M,INIT,H,A)    \
+</span><span style="color:#007020">  do {                            \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);             \
+</span><span style="color:#007020">    word _v(n) = (N);                 \
+</span><span style="color:#007020">    word _v(m) = (M);                 \
+</span><span style="color:#007020">    V = _vec_resize ((V),                 \
+</span><span style="color:#007020">             _v(n),               \
+</span><span style="color:#007020">             (_v(l) + _v(n))*sizeof((V)[0]),  \
+</span><span style="color:#007020">             (H), (A));               \
+</span><span style="color:#007020">    ASSERT (_v(m) &lt;= _v(l));              \
+</span><span style="color:#007020">    memmove ((V) + _v(m) + _v(n),             \
+</span><span style="color:#007020">         (V) + _v(m),                 \
+</span><span style="color:#007020">         (_v(l) - _v(m)) * sizeof ((V)[0]));      \
+</span><span style="color:#007020">    memset  ((V) + _v(m), INIT, _v(n) * sizeof ((V)[0])); \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是在指定位置M，插入N个初值为INIT的元素。</p>
+</div>
+</div>
+<div id="outline-container-headline-58" class="outline-3">
+<h3 id="headline-58">
+vec_insert_ha(V,N,M,H,A)
+</h3>
+<div id="outline-text-headline-58" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_ha(V,N,M,H,A)    vec_insert_init_empty_ha(V,N,M,0,H,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是不对新插入的元素赋初值。</p>
+</div>
+</div>
+<div id="outline-container-headline-59" class="outline-3">
+<h3 id="headline-59">
+vec_insert(V,N,M)
+</h3>
+<div id="outline-text-headline-59" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert(V,N,M)           vec_insert_ha(V,N,M,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是不处理用户自定义头和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-60" class="outline-3">
+<h3 id="headline-60">
+vec_insert_aligned(V,N,M,A)
+</h3>
+<div id="outline-text-headline-60" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_aligned(V,N,M,A) vec_insert_ha(V,N,M,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-61" class="outline-3">
+<h3 id="headline-61">
+vec_insert_init_empty(V,N,M,INIT)
+</h3>
+<div id="outline-text-headline-61" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_init_empty(V,N,M,INIT) \
+</span><span style="color:#007020">    vec_insert_init_empty_ha(V,N,M,INIT,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同 <code class="verbatim">vec_insert_init_empty_ha</code> ，但是不处理用户自定义头和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-62" class="outline-3">
+<h3 id="headline-62">
+vec_insert_init_empty_aligned(V,N,M,INIT,A)
+</h3>
+<div id="outline-text-headline-62" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_init_empty_aligned(V,N,M,INIT,A) \
+</span><span style="color:#007020">    vec_insert_init_empty_ha(V,N,M,INIT,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-63" class="outline-3">
+<h3 id="headline-63">
+vec_insert_elts_ha(V,E,N,M,H,A)
+</h3>
+<div id="outline-text-headline-63" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_elts_ha(V,E,N,M,H,A)         \
+</span><span style="color:#007020">  do {                            \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);             \
+</span><span style="color:#007020">    word _v(n) = (N);                 \
+</span><span style="color:#007020">    word _v(m) = (M);                 \
+</span><span style="color:#007020">    V = _vec_resize ((V),                 \
+</span><span style="color:#007020">             _v(n),               \
+</span><span style="color:#007020">             (_v(l) + _v(n))*sizeof((V)[0]),  \
+</span><span style="color:#007020">             (H), (A));               \
+</span><span style="color:#007020">    ASSERT (_v(m) &lt;= _v(l));              \
+</span><span style="color:#007020">    memmove ((V) + _v(m) + _v(n),             \
+</span><span style="color:#007020">         (V) + _v(m),                 \
+</span><span style="color:#007020">         (_v(l) - _v(m)) * sizeof ((V)[0]));      \
+</span><span style="color:#007020">    clib_memcpy ((V) + _v(m), (E),            \
+</span><span style="color:#007020">             _v(n) * sizeof ((V)[0]));        \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是将N个元素E插入到vector的M位置。</p>
+</div>
+</div>
+<div id="outline-container-headline-64" class="outline-3">
+<h3 id="headline-64">
+vec_insert_elts(V,E,N,M) 
+</h3>
+<div id="outline-text-headline-64" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_elts(V,E,N,M)           vec_insert_elts_ha(V,E,N,M,0,0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是不处理用户自定义头和数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-65" class="outline-3">
+<h3 id="headline-65">
+vec_insert_elts_aligned(V,E,N,M,A)
+</h3>
+<div id="outline-text-headline-65" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_insert_elts_aligned(V,E,N,M,A) vec_insert_elts_ha(V,E,N,M,0,A)</span></code></pre></div>
+</div>
+<p>
+该宏函数同上，但是处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-66" class="outline-3">
+<h3 id="headline-66">
+vec_delete(V,N,M)
+</h3>
+<div id="outline-text-headline-66" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_delete(V,N,M)                   \
+</span><span style="color:#007020">  do {                                \
+</span><span style="color:#007020">    word _v(l) = vec_len (V);                 \
+</span><span style="color:#007020">    word _v(n) = (N);                     \
+</span><span style="color:#007020">    word _v(m) = (M);                     \
+</span><span style="color:#007020">    </span><span style="color:#60a0b0;font-style:italic">/* Copy over deleted elements. */</span><span style="color:#007020">             \
+</span><span style="color:#007020">    if (_v(l) - _v(n) - _v(m) &gt; 0)                \
+</span><span style="color:#007020">      memmove ((V) + _v(m), (V) + _v(m) + _v(n),          \
+</span><span style="color:#007020">           (_v(l) - _v(n) - _v(m)) * sizeof ((V)[0]));    \
+</span><span style="color:#007020">    </span><span style="color:#60a0b0;font-style:italic">/* Zero empty space at end (for future re-allocation). */</span><span style="color:#007020"> \
+</span><span style="color:#007020">    if (_v(n) &gt; 0)                        \
+</span><span style="color:#007020">      memset ((V) + _v(l) - _v(n), 0, _v(n) * sizeof ((V)[0]));   \
+</span><span style="color:#007020">    _vec_len (V) -= _v(n);                    \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是从vector的M位置开始删除N个元素。</p>
+</div>
+</div>
+<div id="outline-container-headline-67" class="outline-3">
+<h3 id="headline-67">
+vec_del1(v,i)
+</h3>
+<div id="outline-text-headline-67" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_del1(v,i)               \
+</span><span style="color:#007020">  do {                        \
+</span><span style="color:#007020">    uword _vec_del_l = _vec_len (v) - 1;      \
+</span><span style="color:#007020">    uword _vec_del_i = (i);           \
+</span><span style="color:#007020">    if (_vec_del_i &lt; _vec_del_l)          \
+</span><span style="color:#007020">      (v)[_vec_del_i] = (v)[_vec_del_l];      \
+</span><span style="color:#007020">    _vec_len (v) = _vec_del_l;            \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是删除所在位置为I的元素。</p>
+</div>
+</div>
+<div id="outline-container-headline-68" class="outline-3">
+<h3 id="headline-68">
+vec_append(v1,v2)
+</h3>
+<div id="outline-text-headline-68" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_append(v1,v2)                       \
+</span><span style="color:#007020">  do {                                    \
+</span><span style="color:#007020">    uword _v(l1) = vec_len (v1);                      \
+</span><span style="color:#007020">    uword _v(l2) = vec_len (v2);                      \
+</span><span style="color:#007020">                                      \
+</span><span style="color:#007020">    v1 = _vec_resize ((v1), _v(l2),                   \
+</span><span style="color:#007020">              (_v(l1) + _v(l2)) * sizeof ((v1)[0]), 0, 0);    \
+</span><span style="color:#007020">    clib_memcpy ((v1) + _v(l1), (v2), _v(l2) * sizeof ((v2)[0]));     \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是将vector2追加到vector1的尾部。</p>
+</div>
+</div>
+<div id="outline-container-headline-69" class="outline-3">
+<h3 id="headline-69">
+vec_append_aligned(v1,v2,align)
+</h3>
+<div id="outline-text-headline-69" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_append_aligned(v1,v2,align)                 \
+</span><span style="color:#007020">  do {                                    \
+</span><span style="color:#007020">    uword _v(l1) = vec_len (v1);                      \
+</span><span style="color:#007020">    uword _v(l2) = vec_len (v2);                      \
+</span><span style="color:#007020">                                      \
+</span><span style="color:#007020">    v1 = _vec_resize ((v1), _v(l2),                   \
+</span><span style="color:#007020">              (_v(l1) + _v(l2)) * sizeof ((v1)[0]), 0, align);    \
+</span><span style="color:#007020">    clib_memcpy ((v1) + _v(l1), (v2), _v(l2) * sizeof ((v2)[0]));     \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是需要处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-70" class="outline-3">
+<h3 id="headline-70">
+vec_prepend(v1,v2)
+</h3>
+<div id="outline-text-headline-70" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_prepend(v1,v2)                                              \
+</span><span style="color:#007020">  do {                                                                    \
+</span><span style="color:#007020">    uword _v(l1) = vec_len (v1);                                          \
+</span><span style="color:#007020">    uword _v(l2) = vec_len (v2);                                          \
+</span><span style="color:#007020">                                                                          \
+</span><span style="color:#007020">    v1 = _vec_resize ((v1), _v(l2),                                       \
+</span><span style="color:#007020">              (_v(l1) + _v(l2)) * sizeof ((v1)[0]), 0, 0);    \
+</span><span style="color:#007020">    memmove ((v1) + _v(l2), (v1), _v(l1) * sizeof ((v1)[0]));             \
+</span><span style="color:#007020">    clib_memcpy ((v1), (v2), _v(l2) * sizeof ((v2)[0]));                  \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是将vector2追加到vector1的头部。</p>
+</div>
+</div>
+<div id="outline-container-headline-71" class="outline-3">
+<h3 id="headline-71">
+vec_prepend_aligned(v1,v2,align)
+</h3>
+<div id="outline-text-headline-71" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_prepend_aligned(v1,v2,align)                                \
+</span><span style="color:#007020">  do {                                                                    \
+</span><span style="color:#007020">    uword _v(l1) = vec_len (v1);                                          \
+</span><span style="color:#007020">    uword _v(l2) = vec_len (v2);                                          \
+</span><span style="color:#007020">                                                                          \
+</span><span style="color:#007020">    v1 = _vec_resize ((v1), _v(l2),                                       \
+</span><span style="color:#007020">              (_v(l1) + _v(l2)) * sizeof ((v1)[0]), 0, align);    \
+</span><span style="color:#007020">    memmove ((v1) + _v(l2), (v1), _v(l1) * sizeof ((v1)[0]));             \
+</span><span style="color:#007020">    clib_memcpy ((v1), (v2), _v(l2) * sizeof ((v2)[0]));                  \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能同上，但是需要处理数据对齐。</p>
+</div>
+</div>
+<div id="outline-container-headline-72" class="outline-3">
+<h3 id="headline-72">
+vec_zero(var)
+</h3>
+<div id="outline-text-headline-72" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_zero(var)                       \
+</span><span style="color:#007020">  do {                                \
+</span><span style="color:#007020">    if (var)                          \
+</span><span style="color:#007020">      memset ((var), 0, vec_len (var) * sizeof ((var)[0]));   \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是对所有vector元素进行清零。</p>
+</div>
+</div>
+<div id="outline-container-headline-73" class="outline-3">
+<h3 id="headline-73">
+vec_set(v,val)
+</h3>
+<div id="outline-text-headline-73" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_set(v,val)              \
+</span><span style="color:#007020">  do {                        \
+</span><span style="color:#007020">    word _v(i);                   \
+</span><span style="color:#007020">    __typeof__ ((v)[0]) _val = (val);     \
+</span><span style="color:#007020">    for (_v(i) = 0; _v(i) &lt; vec_len (v); _v(i)++) \
+</span><span style="color:#007020">      (v)[_v(i)] = _val;              \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是对所有vector元素设置为指定值。</p>
+</div>
+</div>
+<div id="outline-container-headline-74" class="outline-3">
+<h3 id="headline-74">
+vec_is_equal(v1,v2)
+</h3>
+<div id="outline-text-headline-74" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_is_equal(v1,v2) \
+</span><span style="color:#007020">    (vec_len (v1) == vec_len (v2) &amp;&amp; ! memcmp ((v1), (v2), vec_len (v1) * sizeof ((v1)[0])))</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是用来比较两个vector是否相等，相等的条件是vector长度相等并且每个元素都相等。</p>
+</div>
+</div>
+<div id="outline-container-headline-75" class="outline-3">
+<h3 id="headline-75">
+vec_cmp(v1,v2)
+</h3>
+<div id="outline-text-headline-75" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_cmp(v1,v2)                  \
+</span><span style="color:#007020">  ({                          \
+</span><span style="color:#007020">    word _v(i), _v(cmp), _v(l);               \
+</span><span style="color:#007020">    _v(l) = clib_min (vec_len (v1), vec_len (v2));    \
+</span><span style="color:#007020">    _v(cmp) = 0;                      \
+</span><span style="color:#007020">    for (_v(i) = 0; _v(i) &lt; _v(l); _v(i)++) {     \
+</span><span style="color:#007020">      _v(cmp) = (v1)[_v(i)] - (v2)[_v(i)];        \
+</span><span style="color:#007020">      if (_v(cmp))                    \
+</span><span style="color:#007020">        break;                        \
+</span><span style="color:#007020">    }                         \
+</span><span style="color:#007020">    if (_v(cmp) == 0 &amp;&amp; _v(l) &gt; 0)            \
+</span><span style="color:#007020">      _v(cmp) = vec_len(v1) - vec_len(v2);        \
+</span><span style="color:#007020">    (_v(cmp) &lt; 0 ? -1 : (_v(cmp) &gt; 0 ? +1 : 0));      \
+</span><span style="color:#007020">  })</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是比较两个vector的大小。</p>
+</div>
+</div>
+<div id="outline-container-headline-76" class="outline-3">
+<h3 id="headline-76">
+vec_sort_with_function(vec,f)
+</h3>
+<div id="outline-text-headline-76" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_sort_with_function(vec,f)               \
+</span><span style="color:#007020">  do {                                \
+</span><span style="color:#007020">    qsort (vec, vec_len (vec), sizeof (vec[0]), (void *) (f));    \
+</span><span style="color:#007020">  } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数的功能是对vector进行排序。</p>
+</div>
+</div>
+<div id="outline-container-headline-77" class="outline-3">
+<h3 id="headline-77">
+vec_validate_init_c_string(V, S, L) 
+</h3>
+<div id="outline-text-headline-77" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_validate_init_c_string(V, S, L)     \
+</span><span style="color:#007020">    do {                                          \
+</span><span style="color:#007020">      vec_reset_length (V);                       \
+</span><span style="color:#007020">      vec_validate ((V), (L));                    \
+</span><span style="color:#007020">      if ((S) &amp;&amp; (L))                             \
+</span><span style="color:#007020">          clib_memcpy ((V), (S), (L));            \
+</span><span style="color:#007020">      (V)[(L)] = 0;                               \
+</span><span style="color:#007020">    } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是用来初始化一个C语言标准的字符串。</p>
+</div>
+</div>
+<div id="outline-container-headline-78" class="outline-3">
+<h3 id="headline-78">
+vec_c_string_is_terminated(V)
+</h3>
+<div id="outline-text-headline-78" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_c_string_is_terminated(V)                   \
+</span><span style="color:#007020">    (((V) != 0) &amp;&amp; (vec_len (V) != 0) &amp;&amp; ((V)[vec_len ((V)) - 1] == 0))</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是判断vector字符串是否以0结尾。</p>
+</div>
+</div>
+<div id="outline-container-headline-79" class="outline-3">
+<h3 id="headline-79">
+vec_terminate_c_string(V)
+</h3>
+<div id="outline-text-headline-79" class="outline-text-3">
+<div class="src src-c">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#007020">#define vec_terminate_c_string(V)               \
+</span><span style="color:#007020">    do {                                          \
+</span><span style="color:#007020">      u32 vl = vec_len ((V));                     \
+</span><span style="color:#007020">      if (!vec_c_string_is_terminated(V))         \
+</span><span style="color:#007020">        {                                         \
+</span><span style="color:#007020">          vec_validate ((V), vl);                 \
+</span><span style="color:#007020">          (V)[vl] = 0;                            \
+</span><span style="color:#007020">        }                                         \
+</span><span style="color:#007020">    } while (0)</span></code></pre></div>
+</div>
+<p>
+该宏函数功能是如果vector不以0结尾，那么就把结尾置零。</p>
+</div>
+</div>
+<div id="outline-container-headline-80" class="outline-3">
+<h3 id="headline-80">
+vec_resize_allocate_memory (…)
+</h3>
+<div id="outline-text-headline-80" class="outline-text-3">
 <div class="src src-c">
 <div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">  <span style="color:#60a0b0;font-style:italic">/* Vector resize operator.  Called as needed by various macros such as
 </span><span style="color:#60a0b0;font-style:italic">     vec_add1() when we need to allocate memory. */</span>

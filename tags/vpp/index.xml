@@ -18,7 +18,7 @@
       
       <guid>https://leenzhu.com/posts/tech/vpp-vec.html</guid>
       <description>&lt;p&gt;
-&lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 &lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 的定义以及其对应的操作。&lt;/p&gt;</description>
+&lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 数据结构是VPP的基础，在整个代码中大量使用这个基础结构，如果想要读懂VPP代码，那么首先需要熟悉 &lt;code class=&#34;verbatim&#34;&gt;vec&lt;/code&gt; 的定义以及其对应的操作。本文分析的是 VPP stable/1609 的代码。&lt;/p&gt;</description>
     </item>
     
   </channel>
