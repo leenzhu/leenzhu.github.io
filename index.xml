@@ -6,10 +6,20 @@
     <description>Recent content on Leen Zhu</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 30 Jul 2020 09:04:41 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 05 Aug 2020 09:34:00 +0800</lastBuildDate>
     
 	<atom:link href="https://leenzhu.com/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>caddy-namesilo</title>
+      <link>https://leenzhu.com/posts/tech/caddy-namesilo.html</link>
+      <pubDate>Wed, 05 Aug 2020 09:34:00 +0800</pubDate>
+      
+      <guid>https://leenzhu.com/posts/tech/caddy-namesilo.html</guid>
+      <description>&lt;p&gt;
+从官方下载的caddy不支持namesilo的https证书自动获取，需要自行编译。本文将简单介绍caddy-1.0.5的编译过程。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>win10-启用休眠</title>

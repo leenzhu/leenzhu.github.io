@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+
+<meta name="author"
+      content="leen"/>
+
+
+<meta name="description" content=" 从官方下载的caddy不支持namesilo的https证书自动获取，需要自行编译。本文将简单介绍caddy-1.0.5的编译过程。
+"/>
+
+
+
+
+<meta name="keywords" content="leen, leenzhu, nil, blog, hugo, sun, theme"/>
+
+
+
+<link rel="canonical" href="https://leenzhu.com/posts/tech/caddy-namesilo.html"/>
+
+
+
+<title>caddy-namesilo &middot; Leen Zhu</title>
+
+<link rel="shortcut icon" href="/image/logo.png"/>
+
+<link rel="stylesheet" href="/css/normalize.css"/>
+<link rel="stylesheet" href="/css/chroma.css"/>
+
+<link rel="stylesheet" href="/scss/sun.min.72726a31336934fe23c27ac479410b0f9fd2bcf7862758d01b2265e6f22c97eb.css" integrity="sha256-cnJqMTNpNP4jwnrEeUELD5/SvPeGJ1jQGyJl5vIsl&#43;s=" media="screen" crossorigin="anonymous">
+
+
+
+
+  </head>
+  <body>
+    <div class="main">
+        <header class="header clearfix">
+    <a href="#" class="site-logo"><img src="/image/logo.png"></img></a>
+    <div class="site-info">
+        <h1 class="site-name"><a href="/">Leen Zhu</a></h1>
+        <p class="site-description">while(life--) money&#43;&#43;;</p>
+    </div>  
+    <nav class="site-nav">
+        
+            <a href="/">首页</a>
+        
+            <a href="/posts.html">归档</a>
+        
+            <a href="/categories.html">分类</a>
+        
+            <a href="/tags.html">标签</a>
+        
+            <a href="/about.html">关于</a>
+        
+    </nav>
+</header>
+
+        <div class="content">
+            
+<div class="post-page">
+    <h1><a href='/posts/tech/caddy-namesilo.html'>caddy-namesilo</a></h1>
+    <div class="post-meta">
+        <span class="date">2020-08-05</span>
+        
+        <span class="field tags">
+            
+            <a class="tag" href="https://leenzhu.com/tags/caddy/">#caddy</a>
+            
+            <a class="tag" href="https://leenzhu.com/tags/namesilo/">#namesilo</a>
+            
+        </span>
+        
+    </div>
+    <hr/>
+    <div class="post-content">
+    <p>
+从官方下载的caddy不支持namesilo的https证书自动获取，需要自行编译。本文将简单介绍caddy-1.0.5的编译过程。</p>
+<div id="outline-container-headline-1" class="outline-2">
+<h2 id="headline-1">
+查看caddy支持的tls插件
+</h2>
+<div id="outline-text-headline-1" class="outline-text-2">
+<div class="src src-sh">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">  caddy -plugins</code></pre></div>
+</div>
+<p>
+在 <code class="verbatim">tls</code> 这一项看到，默认情况下只有tls.cluster.file这个选项。所以没有办法支持 <code class="verbatim">namesilo</code> 的 <code class="verbatim">dns</code> 管理。因此需要重新编译。</p>
+<pre class="example">
+  tls
+  tls.cluster.file
+</pre>
+</div>
+</div>
+<div id="outline-container-headline-2" class="outline-2">
+<h2 id="headline-2">
+建立工程目录
+</h2>
+<div id="outline-text-headline-2" class="outline-text-2">
+<div class="src src-sh">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">  mkdir caddy
+  <span style="color:#007020">cd</span> caddy</code></pre></div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-3" class="outline-2">
+<h2 id="headline-3">
+编写 <code class="verbatim">main.go</code> 代码
+</h2>
+<div id="outline-text-headline-3" class="outline-text-2">
+<div class="src src-go">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">  <span style="color:#007020;font-weight:bold">package</span> main
+
+  <span style="color:#007020;font-weight:bold">import</span> (
+          <span style="color:#4070a0">&#34;github.com/caddyserver/caddy/caddy/caddymain&#34;</span>
+
+          <span style="color:#60a0b0;font-style:italic">// plug in plugins here, for example:
+</span><span style="color:#60a0b0;font-style:italic"></span>          <span style="color:#60a0b0;font-style:italic">// _ &#34;import/path/here&#34;
+</span><span style="color:#60a0b0;font-style:italic"></span>      _ <span style="color:#4070a0">&#34;github.com/caddyserver/dnsproviders/namesilo&#34;</span>
+
+  )
+
+  <span style="color:#007020;font-weight:bold">func</span> <span style="color:#06287e">main</span>() {
+          <span style="color:#60a0b0;font-style:italic">// optional: disable telemetry
+</span><span style="color:#60a0b0;font-style:italic"></span>          <span style="color:#60a0b0;font-style:italic">// caddymain.EnableTelemetry = false
+</span><span style="color:#60a0b0;font-style:italic"></span>          caddymain.<span style="color:#06287e">Run</span>()
+  }</code></pre></div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-4" class="outline-2">
+<h2 id="headline-4">
+初始化go模块
+</h2>
+<div id="outline-text-headline-4" class="outline-text-2">
+<p>在新建的 <code class="verbatim">main.go</code> 文件中复制上述代码。然后运行：</p>
+<div class="src src-sh">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">  go mod init caddy</code></pre></div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-5" class="outline-2">
+<h2 id="headline-5">
+构建
+</h2>
+<div id="outline-text-headline-5" class="outline-text-2">
+<div class="src src-sh">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#007020">export</span> <span style="color:#bb60d5">GOPROXY</span><span style="color:#666">=</span>https://goproxy.io
+go get github.com/caddyserver/caddy/caddy/caddymain
+go build</code></pre></div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-6" class="outline-2">
+<h2 id="headline-6">
+总结
+</h2>
+<div id="outline-text-headline-6" class="outline-text-2">
+<ol>
+<li>
+<p>如果需要其它的DNS服务，可以查看 <a href="https://github.com/caddyserver/dnsproviders">https://github.com/caddyserver/dnsproviders</a> 看看有哪些已经被支持</p>
+</li>
+<li>
+<p>go的版本需要 &gt;= go1.13</p>
+</li>
+<li>
+<p>在国内需要设置 <code class="verbatim">GOPROXY</code> 才能正常下载相关代码</p>
+</li>
+<li>
+<p>在运行caddy通过namesilo的DNS获取https证书时，发现总时失败。经查询发现是检查DNS的超时时间设置太短的缘故。通过环境变量延长超时时间即可。</p>
+</li>
+</ol>
+<div class="src src-sh">
+<div class="highlight"><pre style="background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">  vim /etc/systemd/system/caddy.service</code></pre></div>
+</div>
+<pre class="example">
+  Environment=NAMESILO_PROPAGATION_TIMEOUT=3600
+  Environment=NAMESILO_POLLING_INTERVAL=120
+  Environment=NAMESILO_TTL=3600
+</pre>
+</div>
+</div>
+    </div>
+    <div class="page-nav">
+        
+        <a href="/posts/tech/win10-hibernate.html" class="nav-btn page-next" >win10-启用休眠</a>
+        
+
+        
+</div>
+
+</div>
+
+        </div>
+    </div>
+    <div class="footer">
+    <div class="copyright">
+        @2019 <a href="https://leenzhu.com">LeenZhu</a>
+    </div>
+  <div class="powered_by">
+      Power by <a href="http://www.gohugo.io/">Hugo</a>,
+      using <a href="https://github.com/leenzhu/hugo-theme-sun">Sun</a> Theme
+  </div>
+</div>
+
+
+  </body>
+</html>
