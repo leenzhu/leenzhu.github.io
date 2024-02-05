@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="leen"><meta name=description content=" Debian 开发环境搭建
+"><meta name=keywords content="leen,leenzhu,nil,blog,hugo,sun,theme"><link rel=canonical href=https://leenzhu.com/posts/debian.html><title>debian &#183; Leen Zhu</title><link rel="shortcut icon" href=/image/logo.png><link rel=stylesheet href=/css/normalize.css><link rel=stylesheet href=/css/chroma.css><link rel=stylesheet href=/scss/sun.min.ab6e93e1fb93fffc44c685a7a5226aba763cb3dda9ffdfd0bd21eff4272b4c2c.css integrity="sha256-q26T4fuT//xExoWnpSJqunY8s92p/9/QvSHv9CcrTCw=" crossorigin=anonymous><link href=https://artalk.leenzhu.com:8443/dist/Artalk.css rel=stylesheet></head><body><div class=main><header class="header clearfix"><a href=/ class=site-logo><img src=/image/logo.png></img></a><div class=site-info><h1 class=site-name><a href=/>Leen Zhu</a></h1><p class=site-description>while(life--) money++;</p></div><nav class=site-nav><a href=/>首页</a>
+<a href=/posts.html>归档</a>
+<a href=/categories.html>分类</a>
+<a href=/tags.html>标签</a>
+<a href=/about.html>关于</a></nav></header><div class=content><div class=post-page><div class=print-url>https://leenzhu.com/posts/debian.html</div><h1><a href=/posts/debian.html>debian</a></h1><div class=post-meta><span class=date>2021-07-19</span>
+<span class="field tags"><a class=tag href=https://leenzhu.com/tags/debian.html>#debian</a></span></div><hr><div class=post-content><p>Debian 开发环境搭建</p><div id=outline-container-headline-1 class=outline-2><h2 id=headline-1>系统安装</h2><div id=outline-text-headline-1 class=outline-text-2><ol><li>下载virtualbox <a href=https://download.virtualbox.org/virtualbox/6.1.22/VirtualBox-6.1.22-144080-Win.exe>https://download.virtualbox.org/virtualbox/6.1.22/VirtualBox-6.1.22-144080-Win.exe</a></li><li>下载debian镜像 <a href=https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-10.10.0-amd64-netinst.iso>https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-10.10.0-amd64-netinst.iso</a></li><li>安装virtualbox</li><li><p>安装debian镜像（据说安装过程断网可以加快安装速度）</p><ul><li>硬盘 120G</li><li>内存 4G</li><li>2 CPU</li><li>两块网卡，一块仅主机通信，一块桥接</li></ul></li></ol></div></div><div id=outline-container-headline-2 class=outline-2><h2 id=headline-2>系统配置</h2><div id=outline-text-headline-2 class=outline-text-2><ol><li><p>配置系统软件源
+默认情况下只有一个 deb cdrom的源，把它注掉。添加一个163的源： <code class=verbatim>deb http://mirrors.163.com/debian buster main non-free contrib</code></p><pre class=example>
+  root@dev:~# cat /etc/apt/sources.list
+  # 
+
+  # deb cdrom:[Debian GNU/Linux 10.10.0 _Buster_ - Official amd64 NETINST 20210619-16:11]/ buster main
+
+  #deb cdrom:[Debian GNU/Linux 10.10.0 _Buster_ - Official amd64 NETINST 20210619-16:11]/ buster main
+
+  # Line commented out by installer because it failed to verify:
+  #deb http://security.debian.org/debian-security buster/updates main
+  # Line commented out by installer because it failed to verify:
+  #deb-src http://security.debian.org/debian-security buster/updates main
+
+  # buster-updates, previously known as &#39;volatile&#39;
+  # A network mirror was not selected during install.  The following entries
+  # are provided as examples, but you should amend them as appropriate
+  # for your mirror of choice.
+  #
+  # deb http://deb.debian.org/debian/ buster-updates main
+  # deb-src http://deb.debian.org/debian/ buster-updates main
+
+  deb http://mirrors.163.com/debian buster main non-free contrib
+
+  root@dev:~#
+</pre></li><li>配置 <code class=verbatim>ip</code> ，默认情况下的我的接口上没有地址，通过 <code class=verbatim>dhclient enp0s8</code> 给接口分配一个地址</li><li>安装 <code class=verbatim>sshd</code> 服务： <code class=verbatim>apt install openssh-server</code></li><li>安装 <code class=verbatim>vim</code> : <code class=verbatim>apt install vim</code></li><li>安装 <code class=verbatim>wget</code> : <code class=verbatim>apt install wget</code></li><li>安装 <code class=verbatim>curl</code> : <code class=verbatim>apt install curl</code></li><li>安装 <code class=verbatim>git</code> : <code class=verbatim>apt install git</code></li><li>安装 <code class=verbatim>zsh</code> : <code class=verbatim>apt install zsh</code></li><li>安装 <code class=verbatim>oh-my-zsh</code> (需要代理）: <code class=verbatim>sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"</code></li><li>安装 <code class=verbatim>tmux</code> : <code class=verbatim>apt install tmux</code></li><li>git clone <a href=https://github.com/leenzhu/tmux.d.git>https://github.com/leenzhu/tmux.d.git</a> ~/.tmux.d</li><li>ln -s ~/.tmux.d/tmux.conf ~/.tmux.conf</li><li>安装 <code class=verbatim>tree</code> : <code class=verbatim>apt install tree</code></li><li>安装 <code class=verbatim>htop</code> : <code class=verbatim>apt install htop</code></li><li>curl -fLo ~/.vim/autoload/plug.vim –create-dirs \ <a href=https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim>https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim</a></li><li>git clone <a href=https://github.com/leenzhu/vim.d.git>https://github.com/leenzhu/vim.d.git</a> ~/.vim.d</li><li>ln -s ~/.vim.d/vimrc ~/.vimrc</li></ol></div></div></div><div class=page-nav><a href=/posts/libnuma.html class="nav-btn page-next">libnuma</a>
+<a href=/posts/x230i.html class="nav-btn page-prev">x230i</a></div><div class=comment style=clear:both;margin-top:5em><script src=https://artalk.leenzhu.com:8443/dist/Artalk.js></script><div id=Comments></div><script>Artalk.init({el:"#Comments",pageKey:"",pageTitle:"",server:"https://artalk.leenzhu.com:8443",site:"LeenZhu"})</script></div></div></div></div><div class=footer><div class=copyright>@2019 <a href=https://leenzhu.com>LeenZhu</a></div><div class=powered_by>Power by <a href=http://www.gohugo.io/>Hugo</a>,
+using <a href=https://github.com/leenzhu/hugo-theme-sun>Sun</a> Theme</div></div></body></html>

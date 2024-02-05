@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>C on Leen Zhu</title><link>https://leenzhu.com/tags/c.html</link><description>Recent content in C on Leen Zhu</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Tue, 06 Jul 2021 14:31:47 +0800</lastBuildDate><atom:link href="https://leenzhu.com/tags/c/index.xml" rel="self" type="application/rss+xml"/><item><title>枚举类型溢出</title><link>https://leenzhu.com/posts/enum-type-overflow.html</link><pubDate>Tue, 06 Jul 2021 14:31:47 +0800</pubDate><guid>https://leenzhu.com/posts/enum-type-overflow.html</guid><description>&lt;ol>
+&lt;li>枚举类型的值占几个字节？&lt;/li>
+&lt;li>枚举值能否为负数？&lt;/li>
+&lt;li>枚举类型的值超过上限会怎样？&lt;/li>
+&lt;li>如果指定枚举类型占用字节数？&lt;/li>
+&lt;/ol></description></item></channel></rss>

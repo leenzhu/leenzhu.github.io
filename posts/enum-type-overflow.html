@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="leen"><meta name=description content=" 枚举类型的值占几个字节？ 枚举值能否为负数？ 枚举类型的值超过上限会怎样？ 如果指定枚举类型占用字节数？ "><meta name=keywords content="leen,leenzhu,nil,blog,hugo,sun,theme"><link rel=canonical href=https://leenzhu.com/posts/enum-type-overflow.html><title>枚举类型溢出 &#183; Leen Zhu</title><link rel="shortcut icon" href=/image/logo.png><link rel=stylesheet href=/css/normalize.css><link rel=stylesheet href=/css/chroma.css><link rel=stylesheet href=/scss/sun.min.ab6e93e1fb93fffc44c685a7a5226aba763cb3dda9ffdfd0bd21eff4272b4c2c.css integrity="sha256-q26T4fuT//xExoWnpSJqunY8s92p/9/QvSHv9CcrTCw=" crossorigin=anonymous><link href=https://artalk.leenzhu.com:8443/dist/Artalk.css rel=stylesheet></head><body><div class=main><header class="header clearfix"><a href=/ class=site-logo><img src=/image/logo.png></img></a><div class=site-info><h1 class=site-name><a href=/>Leen Zhu</a></h1><p class=site-description>while(life--) money++;</p></div><nav class=site-nav><a href=/>首页</a>
+<a href=/posts.html>归档</a>
+<a href=/categories.html>分类</a>
+<a href=/tags.html>标签</a>
+<a href=/about.html>关于</a></nav></header><div class=content><div class=post-page><div class=print-url>https://leenzhu.com/posts/enum-type-overflow.html</div><h1><a href=/posts/enum-type-overflow.html>枚举类型溢出</a></h1><div class=post-meta><span class=date>2021-07-06</span>
+<span class="field tags"><a class=tag href=https://leenzhu.com/tags/c.html>#C</a>
+<a class=tag href=https://leenzhu.com/tags/enum.html>#enum</a></span></div><hr><div class=post-content><ol><li>枚举类型的值占几个字节？</li><li>枚举值能否为负数？</li><li>枚举类型的值超过上限会怎样？</li><li>如果指定枚举类型占用字节数？</li></ol><div id=outline-container-headline-1 class=outline-2><h2 id=headline-1>枚举类型占用字节数</h2><div id=outline-text-headline-1 class=outline-text-2><div class="src src-c"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span>  <span style=color:#007020>#include</span> <span style=color:#007020>&lt;stdio.h&gt;</span><span style=color:#007020>
+</span></span></span><span style=display:flex><span><span style=color:#007020></span>  <span style=color:#007020;font-weight:700>enum</span> {
+</span></span><span style=display:flex><span>      A,
+</span></span><span style=display:flex><span>      B
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#902000>int</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>      printf(<span style=color:#4070a0>&#34;sizeof(A) = %d</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>, <span style=color:#007020;font-weight:700>sizeof</span>(A));
+</span></span><span style=display:flex><span>      <span style=color:#007020;font-weight:700>return</span> <span style=color:#40a070>0</span>;
+</span></span><span style=display:flex><span>    }</span></span></code></pre></div></div><pre class=example>
+sizeof(A) = 4
+</pre><p>编译运行，查看结果，可以得知默认情况枚举类型占用4个字节。</p></div></div><div id=outline-container-headline-2 class=outline-2><h2 id=headline-2>枚举类型能否负数</h2><div id=outline-text-headline-2 class=outline-text-2><div class="src src-c"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span>  <span style=color:#007020>#include</span> <span style=color:#007020>&lt;stdio.h&gt;</span><span style=color:#007020>
+</span></span></span><span style=display:flex><span><span style=color:#007020></span>
+</span></span><span style=display:flex><span>  <span style=color:#007020;font-weight:700>enum</span> {
+</span></span><span style=display:flex><span>      A <span style=color:#666>=</span> <span style=color:#666>-</span><span style=color:#40a070>1</span>,
+</span></span><span style=display:flex><span>      B
+</span></span><span style=display:flex><span>  };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#902000>int</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>      printf(<span style=color:#4070a0>&#34;A = %d, B = %d</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>, A, B);
+</span></span><span style=display:flex><span>      <span style=color:#007020;font-weight:700>return</span> <span style=color:#40a070>0</span>;
+</span></span><span style=display:flex><span>  }</span></span></code></pre></div></div><pre class=example>
+A = -1, B = 0
+</pre><p>其实上面的代并不能完全可靠的推断枚举值支持负数，具体原因和补码有关。那么如何才能确定枚举值是支持负数呢？换种问法就是枚举类型是有有符号的还是无符号的？</p><p>这个答案也可以通过编译器得知：</p><div class="src src-sh"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sh data-lang=sh><span style=display:flex><span>  $ gcc -Wsign-compare enum.c
+</span></span><span style=display:flex><span>  enum.c: In <span style=color:#007020;font-weight:700>function</span> ‘main’:
+</span></span><span style=display:flex><span>  enum.c:10:10: warning: comparison between signed and unsigned integer expressions <span style=color:#666>[</span>-Wsign-compare<span style=color:#666>]</span>
+</span></span><span style=display:flex><span>       <span style=color:#007020;font-weight:700>if</span><span style=color:#666>(</span>a &lt; - 1<span style=color:#666>)</span> <span style=color:#666>{</span>
+</span></span><span style=display:flex><span>            ^</span></span></code></pre></div></div><p>编译时候指定无符号和有符号数据进行比较时给出警告，可以看出与枚举值比较时并没有告警。</p><div class="src src-c"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span>  <span style=color:#007020>#include</span> <span style=color:#007020>&lt;stdio.h&gt;</span><span style=color:#007020>
+</span></span></span><span style=display:flex><span><span style=color:#007020></span>
+</span></span><span style=display:flex><span>    <span style=color:#007020;font-weight:700>enum</span> {
+</span></span><span style=display:flex><span>      A <span style=color:#666>=</span> <span style=color:#40a070>1</span>,
+</span></span><span style=display:flex><span>      B
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#902000>int</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>      <span style=color:#902000>unsigned</span> <span style=color:#902000>int</span> a <span style=color:#666>=</span> <span style=color:#40a070>1</span>;
+</span></span><span style=display:flex><span>      <span style=color:#007020;font-weight:700>if</span>(a <span style=color:#666>&lt;</span> <span style=color:#666>-</span> <span style=color:#40a070>1</span>) {
+</span></span><span style=display:flex><span>          printf(<span style=color:#4070a0>&#34;unsigned int: Wrong type conversion 1 Less than -1!!!</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>);
+</span></span><span style=display:flex><span>      } <span style=color:#007020;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>          printf(<span style=color:#4070a0>&#34;unsigned int: ok</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>);
+</span></span><span style=display:flex><span>      } 
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>      <span style=color:#007020;font-weight:700>if</span>(A <span style=color:#666>&lt;</span> <span style=color:#666>-</span> <span style=color:#40a070>1</span>) {
+</span></span><span style=display:flex><span>          printf(<span style=color:#4070a0>&#34;enum: Wrong type conversion 1 Less than -1!!!</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>);
+</span></span><span style=display:flex><span>      } <span style=color:#007020;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>          printf(<span style=color:#4070a0>&#34;enum: ok</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>);
+</span></span><span style=display:flex><span>      } 
+</span></span><span style=display:flex><span>      <span style=color:#007020;font-weight:700>return</span> <span style=color:#40a070>0</span>;
+</span></span><span style=display:flex><span>    }</span></span></code></pre></div></div><pre class=example>
+unsigned int: Wrong type conversion 1 Less than -1!!!
+enum: ok
+</pre></div></div><div id=outline-container-headline-3 class=outline-2><h2 id=headline-3>枚举值超过上限</h2><div id=outline-text-headline-3 class=outline-text-2><div class="src src-c"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span>  <span style=color:#007020>#include</span> <span style=color:#007020>&lt;stdio.h&gt;</span><span style=color:#007020>
+</span></span></span><span style=display:flex><span><span style=color:#007020></span>  <span style=color:#007020;font-weight:700>enum</span> {
+</span></span><span style=display:flex><span>    A <span style=color:#666>=</span> <span style=color:#40a070>0xffffffff</span>,
+</span></span><span style=display:flex><span>    B
+</span></span><span style=display:flex><span>  };
+</span></span><span style=display:flex><span>  <span style=color:#902000>int</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>    printf(<span style=color:#4070a0>&#34;B = %lld</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>, B);
+</span></span><span style=display:flex><span>    <span style=color:#007020;font-weight:700>return</span> <span style=color:#40a070>0</span>;
+</span></span><span style=display:flex><span>  }</span></span></code></pre></div></div><p>编译时候就可以知道这个代码是无法编译通过的，编译会报错。</p><pre class=example>
+error: overflow in enumeration values
+</pre></div></div><div id=outline-container-headline-4 class=outline-2><h2 id=headline-4>指定枚举值点用字节</h2><div id=outline-text-headline-4 class=outline-text-2><p>那么在64位机器上如果需要超过4字节上限的枚举值怎么办呢？其实可以在给枚举值赋值时候指定值的类型为 <code class=verbatim>LL</code> ：</p><div class="src src-c"><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span>  <span style=color:#007020>#include</span> <span style=color:#007020>&lt;stdio.h&gt;</span><span style=color:#007020>
+</span></span></span><span style=display:flex><span><span style=color:#007020></span>  <span style=color:#007020;font-weight:700>enum</span> {
+</span></span><span style=display:flex><span>    A <span style=color:#666>=</span> <span style=color:#40a070>0xffffffffLL</span>,
+</span></span><span style=display:flex><span>    B
+</span></span><span style=display:flex><span>  };
+</span></span><span style=display:flex><span>  <span style=color:#902000>int</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>    printf(<span style=color:#4070a0>&#34;B = %lld</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>, B);
+</span></span><span style=display:flex><span>    printf(<span style=color:#4070a0>&#34;sizeof(B) = %d</span><span style=color:#4070a0;font-weight:700>\n</span><span style=color:#4070a0>&#34;</span>, <span style=color:#007020;font-weight:700>sizeof</span>(B));
+</span></span><span style=display:flex><span>    <span style=color:#007020;font-weight:700>return</span> <span style=color:#40a070>0</span>;
+</span></span><span style=display:flex><span>  }</span></span></code></pre></div></div><pre class=example>
+B = 4294967296
+sizeof(B) = 8
+</pre></div></div><div id=outline-container-headline-5 class=outline-2><h2 id=headline-5>总结</h2><div id=outline-text-headline-5 class=outline-text-2><p>实际上关于枚举类型的标准是有符号还是无符号，并没有标准来规定，这是由具体实现决定的。</p></div></div></div><div class=page-nav><a href=/posts/caddy-namesilo.html class="nav-btn page-next">caddy-namesilo</a>
+<a href=/posts/cpu.html class="nav-btn page-prev">CPU信息解读</a></div><div class=comment style=clear:both;margin-top:5em><script src=https://artalk.leenzhu.com:8443/dist/Artalk.js></script><div id=Comments></div><script>Artalk.init({el:"#Comments",pageKey:"",pageTitle:"",server:"https://artalk.leenzhu.com:8443",site:"LeenZhu"})</script></div></div></div></div><div class=footer><div class=copyright>@2019 <a href=https://leenzhu.com>LeenZhu</a></div><div class=powered_by>Power by <a href=http://www.gohugo.io/>Hugo</a>,
+using <a href=https://github.com/leenzhu/hugo-theme-sun>Sun</a> Theme</div></div></body></html>

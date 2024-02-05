@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>CPU on Leen Zhu</title><link>https://leenzhu.com/tags/cpu.html</link><description>Recent content in CPU on Leen Zhu</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 12 Jul 2021 17:30:23 +0800</lastBuildDate><atom:link href="https://leenzhu.com/tags/cpu/index.xml" rel="self" type="application/rss+xml"/><item><title>CPU信息解读</title><link>https://leenzhu.com/posts/cpu.html</link><pubDate>Mon, 12 Jul 2021 17:30:23 +0800</pubDate><guid>https://leenzhu.com/posts/cpu.html</guid><description>&lt;p>
+我们开发普通应用程序时一般很少关心CPU信息，但是涉及到CPU多核编程时就需要对CPU有一个基本了理解。在Linux下我们了解CPU信息通常有两个途径：&lt;/p>
+&lt;ol>
+&lt;li>通过命令 &lt;code class="verbatim">lscpu&lt;/code> 来查看CPU概要信息&lt;/li>
+&lt;li>通过命令 &lt;code class="verbatim">cat /proc/cpuinfo&lt;/code> 来查看每个CPU &lt;strong>&lt;strong>逻辑核&lt;/strong>&lt;/strong> 对应信息&lt;/li>
+&lt;/ol>
+&lt;p>本文将详细解读这两个命令输出内容分别有什么含义。&lt;/p></description></item></channel></rss>

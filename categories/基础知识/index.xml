@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>基础知识 on Leen Zhu</title><link>https://leenzhu.com/categories/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html</link><description>Recent content in 基础知识 on Leen Zhu</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 14 Jul 2021 16:26:54 +0800</lastBuildDate><atom:link href="https://leenzhu.com/categories/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/index.xml" rel="self" type="application/rss+xml"/><item><title>libnuma</title><link>https://leenzhu.com/posts/libnuma.html</link><pubDate>Wed, 14 Jul 2021 16:26:54 +0800</pubDate><guid>https://leenzhu.com/posts/libnuma.html</guid><description>&lt;p>
+默认情况下系统自动调整进程的NUMA策略。如果想自己控制NUMA使用方式，那么就需要通过API接口来自行指定。目前只了解到 &lt;code class="verbatim">libnuma&lt;/code> &lt;sup class="footnote-reference">&lt;a id="footnote-reference-1" href="#footnote-1">1&lt;/a>&lt;/sup> 这个库可以进行NUMA策略编程控制，关于这个库，网上搜不到太多的资料。同时因为对NUMA的理解不透彻，很多API的作用都看不明白。本文简单的梳理一下目前用到的开发流程和API的用法。&lt;/p></description></item><item><title>CPU信息解读</title><link>https://leenzhu.com/posts/cpu.html</link><pubDate>Mon, 12 Jul 2021 17:30:23 +0800</pubDate><guid>https://leenzhu.com/posts/cpu.html</guid><description>&lt;p>
+我们开发普通应用程序时一般很少关心CPU信息，但是涉及到CPU多核编程时就需要对CPU有一个基本了理解。在Linux下我们了解CPU信息通常有两个途径：&lt;/p>
+&lt;ol>
+&lt;li>通过命令 &lt;code class="verbatim">lscpu&lt;/code> 来查看CPU概要信息&lt;/li>
+&lt;li>通过命令 &lt;code class="verbatim">cat /proc/cpuinfo&lt;/code> 来查看每个CPU &lt;strong>&lt;strong>逻辑核&lt;/strong>&lt;/strong> 对应信息&lt;/li>
+&lt;/ol>
+&lt;p>本文将详细解读这两个命令输出内容分别有什么含义。&lt;/p></description></item></channel></rss>
