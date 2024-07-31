@@ -1,0 +1,290 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="leen"><meta name=description content="在使用golang的过程需要进行NBNS的报文解析，经调研发现NBNS的报文大都是定长报文，并且需要处理这些报文也不需要太高的性能，所有就决定使用 encoding/binary包来进行编解码。学习过程中对这个包内每个函数都进行尝试并整理出笔记如下。
+"><meta name=keywords content="golang"><link rel=canonical href=https://leenzhu.com/posts/golang-binary.html><title>Golang Binary包使用 &#183; Leen Zhu</title><link rel="shortcut icon" href=/image/logo.png><link rel=stylesheet href=/css/normalize.css><link rel=stylesheet href=/css/chroma.css><link rel=stylesheet href=/scss/sun.min.173be92a65a018529d78026ec3240959d2a3dd35b070c391cad265c861d20173.css integrity="sha256-FzvpKmWgGFKdeAJuwyQJWdKj3TWwcMORytJlyGHSAXM=" crossorigin=anonymous></head><body><div class=main><header class="header clearfix"><a href=/ class=site-logo><img src=/image/logo.png></img></a><div class=site-info><h1 class=site-name><a href=/>Leen Zhu</a></h1><p class=site-description>while(life--) money++;</p></div><nav class=site-nav><a href=/>首页</a>
+<a href=/posts.html>归档</a>
+<a href=/categories.html>分类</a>
+<a href=/tags.html>标签</a>
+<a href=/about.html>关于</a></nav></header><div class=content><div class=post-page><div class=print-url>https://leenzhu.com/posts/golang-binary.html</div><h1><a href=/posts/golang-binary.html>Golang Binary包使用</a></h1><div class=post-meta><span class=date>2023-05-15</span>
+<span class="field tags"><a class=tag href=https://leenzhu.com/tags/golang.html>#golang</a></span></div><hr><div class=post-content><p>在使用golang的过程需要进行NBNS的报文解析，经调研发现NBNS的报文大都是定长报文，并且需要处理这些报文也不需要太高的性能，所有就决定使用 <code>encoding/binary</code>包来进行编解码。学习过程中对这个包内每个函数都进行尝试并整理出笔记如下。</p><p>Binary 包实现了简单的数字和字节序列之间的转换以及变量的编码与解码。</p><p>数字的翻译是通过读写固定大小的值来进行的。固定大小的值要么是固定大小的算术类型（<code>bool，int8,uint8,int16,flaot32,complex64,...</code>) 要么是包含固定大小值的数组或结构体。</p><p>vaint 函数使用变长编码对单个整型值进行编、解码。值越小，需要的字节越少。具体规范可以参考 <a href=https://developers.google.com/protocol-buffers/docs/encoding>https://developers.google.com/protocol-buffers/docs/encoding</a></p><p>本包更倾向于简单的实现而不是更高的性能。如果客户需要高性能序列化，尤其是大型数据结构，应该看看更高级的解决方案，例如 <code>encoding/gob</code> 包 或者 <code>protocol buffers</code> 。</p><h2 id=函数>函数</h2><h3 id=read>Read</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>Read</span>(r io.Readr, order ByteOrder, data any) <span style=color:#902000>error</span>
+</span></span></code></pre></div><p><code>Read</code> 函数从 <code>r</code> 中读取结构化的二进制数据到 <code>data</code> 中。也就是说 <code>Read</code> 是一个 <strong>反序列化（解码）</strong> 的过程。 <code>data</code> 必须是一个有<strong>固定大小</strong>值的<strong>指针</strong>类型或者是有固定大小值的切片(可以是<code>int32</code>，但不能是<code>int</code>类型)。从 <code>r</code> 读取的字节使用指定的字节顺序解码并写入 <code>data</code> 中连续的字段。在解码 <code>bool</code> 值时， 值为 <code>0x00</code> 的字节被解码成 <code>false</code> 其它任何非 <code>0x00</code> 字节都被解码成 <code>true</code> 。当将数据读取到体中时，字段名是空白(_)的，对应该字段的数据将被跳过。例如空白字段名称可以用来处理 <code>padding</code> 。结构体中的字段如果不是空白字段，都必须是导出字段（<strong>字段名首字母必须大写</strong>），否则会导致 <code>Read</code> 崩溃(<code>panic: reflect: reflect.Value.SetInt using value obtained using unexported field</code>)。</p><p>只有当没有任何字节被读取的时候，<code>error</code> 的值才是 <code>EOF</code>。如果 <code>Read</code> 函数读取了一部分字节，但是没有读取全部所需的字节时发生了 <code>EOF</code>，那么<code>Read</code>函数就会返回<code>ErrUnexpectedEOF</code>。</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;bytes&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> u16l <span style=color:#902000>uint16</span>
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> u16b <span style=color:#902000>uint16</span>
+</span></span><span style=display:flex><span>	b <span style=color:#666>:=</span> []<span style=color:#902000>byte</span>{<span style=color:#40a070>0x12</span>, <span style=color:#40a070>0x34</span>}
+</span></span><span style=display:flex><span>	r <span style=color:#666>:=</span> bytes.<span style=color:#06287e>NewReader</span>(b)
+</span></span><span style=display:flex><span>	err <span style=color:#666>:=</span> binary.<span style=color:#06287e>Read</span>(r, binary.LittleEndian, <span style=color:#666>&amp;</span>u16l)
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>if</span> err <span style=color:#666>!=</span> <span style=color:#007020;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		fmt.<span style=color:#06287e>Println</span>(<span style=color:#4070a0>&#34;binary.Read failed:&#34;</span>, err)
+</span></span><span style=display:flex><span>		<span style=color:#007020;font-weight:700>return</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	r.<span style=color:#06287e>Reset</span>(b)
+</span></span><span style=display:flex><span>	err = binary.<span style=color:#06287e>Read</span>(r, binary.BigEndian, <span style=color:#666>&amp;</span>u16b)
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>if</span> err <span style=color:#666>!=</span> <span style=color:#007020;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		fmt.<span style=color:#06287e>Println</span>(<span style=color:#4070a0>&#34;binary.Read failed:&#34;</span>, err)
+</span></span><span style=display:flex><span>		<span style=color:#007020;font-weight:700>return</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;littleEndian: 0x%x, bigEndian: 0x%x\n&#34;</span>, u16l, u16b)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>output:</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>littleEndian: 0x3412, bigEndian: 0x1234
+</span></span></code></pre></div><p>对于 <code>uint16</code>、<code>uint32</code>、<code>uint64</code> 这样的类型其实并不需要用 <code>Read</code> 函数来进行解码，可以直接调用 <code>binary.LittleEndian.Uint16()</code> 这样的函数来进行处理：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	b <span style=color:#666>:=</span> []<span style=color:#902000>byte</span>{<span style=color:#40a070>0x12</span>, <span style=color:#40a070>0x34</span>}
+</span></span><span style=display:flex><span>	u16l <span style=color:#666>:=</span> binary.LittleEndian.<span style=color:#06287e>Uint16</span>(b)
+</span></span><span style=display:flex><span>	u16b <span style=color:#666>:=</span> binary.BigEndian.<span style=color:#06287e>Uint16</span>(b)
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;littleEndian: 0x%x, bigEndian: 0x%x\n&#34;</span>, u16l, u16b)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出为：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>littleEndian: 0x3412, bigEndian: 0x1234
+</span></span></code></pre></div><p>另外还有一点需要注意的是，上面的代码仅针对无符号类型的，如果是有符号类型的数那么该如何处理？其实可以简单的通过强制类型转换就能完成。如，<code>var i16 int16; i16 = int16(binary.LittleEndian.Uint16(b))</code>。</p><p>对于结构体类型或字节类型通常更适合用 <code>Read</code> 函数来进行处理：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;bytes&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> Info <span style=color:#007020;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>	A <span style=color:#902000>int16</span>
+</span></span><span style=display:flex><span>	B <span style=color:#902000>uint32</span>
+</span></span><span style=display:flex><span>	_ <span style=color:#902000>uint8</span>
+</span></span><span style=display:flex><span>	C [<span style=color:#40a070>3</span>]<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf Info
+</span></span><span style=display:flex><span>	b <span style=color:#666>:=</span> []<span style=color:#902000>byte</span>{
+</span></span><span style=display:flex><span>		<span style=color:#40a070>0x12</span>, <span style=color:#40a070>0x34</span>,
+</span></span><span style=display:flex><span>		<span style=color:#40a070>0x22</span>, <span style=color:#40a070>0x34</span>, <span style=color:#40a070>0x56</span>, <span style=color:#40a070>0x78</span>,
+</span></span><span style=display:flex><span>		<span style=color:#40a070>0xff</span>,
+</span></span><span style=display:flex><span>		<span style=color:#40a070>0xaa</span>, <span style=color:#40a070>0xbb</span>, <span style=color:#40a070>0xcc</span>,
+</span></span><span style=display:flex><span>		<span style=color:#40a070>0x00</span>, <span style=color:#40a070>0x00</span>,
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	r <span style=color:#666>:=</span> bytes.<span style=color:#06287e>NewReader</span>(b)
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;struct len = %d, bytes = %d\n&#34;</span>, binary.<span style=color:#06287e>Size</span>(inf), <span style=color:#007020>len</span>(b))
+</span></span><span style=display:flex><span>	err <span style=color:#666>:=</span> binary.<span style=color:#06287e>Read</span>(r, binary.BigEndian, <span style=color:#666>&amp;</span>inf)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;Info: %x, err = %v\n&#34;</span>, inf, err)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>struct len = 10, bytes = 12
+</span></span><span style=display:flex><span>Info: {1234 22345678 0 aabbcc}, err = &lt;nil&gt;
+</span></span></code></pre></div><p>由上面输出可以知道，字节流中的 <code>0xff</code> 被跳过了(结构成员对应的位置为0值)，字节流的大小超过要解析结构大小不会产生错误。如果字节流比要读取的结构大小还要小，那么就会报错误 <code>unexpected EOF</code>。</p><p>另外，如果结构体成员中有任何一个字段的类型不是固定大小的，那么 <code>Read</code> 函数就是报错： <code>invalid type</code> 。同时 <code>Size</code> 函数返回值是 <code>-1</code>。</p><h3 id=size>Size</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>Size</span>(v any) <span style=color:#902000>int</span>
+</span></span></code></pre></div><p>该函数返回 <code>Write</code> 将对 <code>v</code> 编码成多少个字节，<code>v</code> 必须是一个固定大小的值，或者是固定大小值的切片，或者是指向上述类型的指针。如果 <code>v</code> 不是上面这些类型，那么本函数将返回 <code>-1</code> 。</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> Info1 <span style=color:#007020;font-weight:700>struct</span> { <span style=color:#60a0b0;font-style:italic>// size = 2 + 4 = 6
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	A <span style=color:#902000>int16</span>
+</span></span><span style=display:flex><span>	B <span style=color:#902000>int32</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> Info2 <span style=color:#007020;font-weight:700>struct</span> { <span style=color:#60a0b0;font-style:italic>// size = 4 + 32 = 36
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	A <span style=color:#902000>int32</span>
+</span></span><span style=display:flex><span>	B [<span style=color:#40a070>32</span>]<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> Info3 <span style=color:#007020;font-weight:700>struct</span> { <span style=color:#60a0b0;font-style:italic>// size = 2 * 6 + 36 = 48
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	A [<span style=color:#40a070>2</span>]Info1
+</span></span><span style=display:flex><span>	B Info2
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic>// 匿名内嵌体
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span><span style=color:#007020;font-weight:700>type</span> Info4 <span style=color:#007020;font-weight:700>struct</span> { <span style=color:#60a0b0;font-style:italic>// size = 6 + 4 = 10
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	Info1
+</span></span><span style=display:flex><span>	C <span style=color:#902000>int32</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> Info5 <span style=color:#007020;font-weight:700>struct</span> { <span style=color:#60a0b0;font-style:italic>// size = -1, 因为 int 大小不固定
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	A <span style=color:#902000>int</span>
+</span></span><span style=display:flex><span>	B <span style=color:#902000>uint8</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf1 Info1
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf2 Info2
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf3 Info3
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf4 Info4
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>var</span> inf5 Info5
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Println</span>(binary.<span style=color:#06287e>Size</span>(inf1))
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Println</span>(binary.<span style=color:#06287e>Size</span>(inf2))
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Println</span>(binary.<span style=color:#06287e>Size</span>(inf3))
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Println</span>(binary.<span style=color:#06287e>Size</span>(inf4))
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Println</span>(binary.<span style=color:#06287e>Size</span>(inf5))
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>6
+</span></span><span style=display:flex><span>36
+</span></span><span style=display:flex><span>48
+</span></span><span style=display:flex><span>10
+</span></span><span style=display:flex><span>-1
+</span></span></code></pre></div><p>需要注意的是，<code>binary.Size</code> 只能计算固定大小变量的大小，而不能计算类型的大小。这个不同于 <code>unsafe.Sizeof</code> ，参见 <a href>对比unsafe.Sizeof</a>。</p><h3 id=write>Write</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>Write</span>(w io.Writer, order ByteOrder, data any) <span style=color:#902000>error</span>
+</span></span></code></pre></div><p><code>Write</code> 函数将 <code>data</code> 的二进制表现形式的数据写入 <code>w</code> 。 <code>data</code> 必须是固定大小的值或者固定大小值的切片或者指向这类数据的指针。</p><blockquote><p>注：
+data 类型在 <code>Read</code> 中只能是变量指针，在 <code>Write</code> 中可以是变量本身。因为 <code>Read</code> 需要向变量填充数据，而 <code>Write</code> 只是使用这个数据，所以是不是指针都没有影响。</p></blockquote><p><code>bool</code> 类型的值的被编码成一个字节：<code>1</code> 表示 <code>true</code>，<code>0</code> 表示 <code>false</code> 。<code>data</code> 中连续的字段值根据指定的字节序被依次编码成二进制数据写入 <code>w</code> 中。对结构体进行编码时，如果字段名称是空白 （_ ），那么 <code>0</code> 值将被写入 <code>w</code> 中。</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;bytes&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> NameQuery <span style=color:#007020;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>	Name  [<span style=color:#40a070>16</span>]<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>	Type  <span style=color:#902000>uint16</span>
+</span></span><span style=display:flex><span>	Class <span style=color:#902000>uint16</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	nq <span style=color:#666>:=</span> NameQuery{
+</span></span><span style=display:flex><span>		Name:  [<span style=color:#40a070>16</span>]<span style=color:#902000>byte</span>{<span style=color:#4070a0>&#39;a&#39;</span>, <span style=color:#4070a0>&#39;b&#39;</span>},
+</span></span><span style=display:flex><span>		Type:  <span style=color:#40a070>0x1234</span>,
+</span></span><span style=display:flex><span>		Class: <span style=color:#40a070>0xcd</span>,
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	buf <span style=color:#666>:=</span> <span style=color:#007020>new</span>(bytes.Buffer)
+</span></span><span style=display:flex><span>	err <span style=color:#666>:=</span> binary.<span style=color:#06287e>Write</span>(buf, binary.BigEndian, nq)
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>if</span> err <span style=color:#666>!=</span> <span style=color:#007020;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		fmt.<span style=color:#06287e>Println</span>(<span style=color:#4070a0>&#34;binary.Write failed:&#34;</span>, err)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;% x&#34;</span>, buf.<span style=color:#06287e>Bytes</span>())
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>61 62 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12 34 00 cd
+</span></span></code></pre></div><h3 id=putuvarint>PutUvarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>PutUvarint</span>(buf []<span style=color:#902000>byte</span>, x <span style=color:#902000>uint64</span>) <span style=color:#902000>int</span>
+</span></span></code></pre></div><p><code>PutUvarint</code> 将 <code>uint64</code> 类型的值编码到 <code>buf</code> 中并返回编码后字节大小，如果 <code>buf</code> 空间太小，不足以容纳编码后的字节，那么将会导致本函数 <code>panic</code> 。所以在编码前需要确保 <code>buf</code> 的空间是足够的。每种数值所需要最大空间可以通过 <code>MaxVarintLenN</code> 来获取。</p><p>包里定义了三个常量，分别是：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>const</span> (
+</span></span><span style=display:flex><span>	MaxVarintLen16 = <span style=color:#40a070>3</span>
+</span></span><span style=display:flex><span>	MaxVarintLen32 = <span style=color:#40a070>5</span>
+</span></span><span style=display:flex><span>	MarVarintLen64 = <span style=color:#40a070>10</span>
+</span></span><span style=display:flex><span>)
+</span></span></code></pre></div><p><code>MaxVarintLenN</code> 中的 <code>N</code> 表示整型有多少 <code>bit</code> ， <code>MaxVarintLen16 = 3</code> 表示 <code>16bit</code> 的整型在变长编码时最多可以编码成 <code>3</code> 个字节。其它两个类型依此类推。</p><blockquote><p>注：
+如果 buf 空间不足，假设，需要3个字节，而 buf 只有 2 个字节空间，那么报错内容如下：
+panic: runtime error: index out of range [2] with length 2</p></blockquote><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	buf <span style=color:#666>:=</span> <span style=color:#007020>make</span>([]<span style=color:#902000>byte</span>, binary.MaxVarintLen64)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>for</span> _, x <span style=color:#666>:=</span> <span style=color:#007020;font-weight:700>range</span> []<span style=color:#902000>uint64</span>{<span style=color:#40a070>1</span>, <span style=color:#40a070>2</span>, <span style=color:#40a070>127</span>, <span style=color:#40a070>128</span>, <span style=color:#40a070>255</span>, <span style=color:#40a070>256</span>, <span style=color:#40a070>32767</span>, <span style=color:#40a070>32768</span>, <span style=color:#40a070>65535</span>, <span style=color:#40a070>65536</span>} {
+</span></span><span style=display:flex><span>		n <span style=color:#666>:=</span> binary.<span style=color:#06287e>PutUvarint</span>(buf, x)
+</span></span><span style=display:flex><span>		fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;Encode x = %5d into [% x] with %d bytes\n&#34;</span>, x, buf, n)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>Encode x =     <span style=color:#40a070>1</span> into [<span style=color:#40a070>01</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>1</span> bytes
+</span></span><span style=display:flex><span>Encode x =     <span style=color:#40a070>2</span> into [<span style=color:#40a070>02</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>1</span> bytes
+</span></span><span style=display:flex><span>Encode x =   <span style=color:#40a070>127</span> into [<span style=color:#40a070>7</span>f <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>1</span> bytes
+</span></span><span style=display:flex><span>Encode x =   <span style=color:#40a070>128</span> into [<span style=color:#40a070>80</span> <span style=color:#40a070>01</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>2</span> bytes
+</span></span><span style=display:flex><span>Encode x =   <span style=color:#40a070>255</span> into [ff <span style=color:#40a070>01</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>2</span> bytes
+</span></span><span style=display:flex><span>Encode x =   <span style=color:#40a070>256</span> into [<span style=color:#40a070>80</span> <span style=color:#40a070>02</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>2</span> bytes
+</span></span><span style=display:flex><span>Encode x = <span style=color:#40a070>32767</span> into [ff ff <span style=color:#40a070>01</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>3</span> bytes
+</span></span><span style=display:flex><span>Encode x = <span style=color:#40a070>32768</span> into [<span style=color:#40a070>80</span> <span style=color:#40a070>80</span> <span style=color:#40a070>02</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>3</span> bytes
+</span></span><span style=display:flex><span>Encode x = <span style=color:#40a070>65535</span> into [ff ff <span style=color:#40a070>03</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>3</span> bytes
+</span></span><span style=display:flex><span>Encode x = <span style=color:#40a070>65536</span> into [<span style=color:#40a070>80</span> <span style=color:#40a070>80</span> <span style=color:#40a070>04</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span> <span style=color:#40a070>00</span>] with <span style=color:#40a070>3</span> bytes
+</span></span></code></pre></div><h3 id=uvarint>Uvarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>Uvarint</span>(buf []<span style=color:#902000>byte</span>) (<span style=color:#902000>uint64</span>, <span style=color:#902000>int</span>)
+</span></span></code></pre></div><p><code>Uvarint</code> 将 <code>buf</code> 内容解码成 <code>uint64</code>，并返回解码后的数值和读取 <code>buf</code> 的字节数，如果发生错误，那么解码的值是 <code>0</code> 同时读取的字节 <code>n &lt;= 0</code> ， 这将表示：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>	n == 0: buf 空间太小
+</span></span><span style=display:flex><span>	n &lt; 0: 解码后的值大于64位（溢出），`-n` 表示已经读取的字节。
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	inputs <span style=color:#666>:=</span> [][]<span style=color:#902000>byte</span>{
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x01</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x02</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x7f</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x01</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0xff</span>, <span style=color:#40a070>0x01</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x02</span>},
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x80</span>}, <span style=color:#60a0b0;font-style:italic>// n = 0, 不完整的编码，还需要后面有最高位不为1的字节。
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>		{<span style=color:#40a070>0x08</span>, <span style=color:#40a070>0x80</span>}, <span style=color:#60a0b0;font-style:italic>// n = 1, 后续有不需要的字节。
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>		{<span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x77</span>}, <span style=color:#60a0b0;font-style:italic>// n = -11, 数值太大
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	}
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>for</span> _, b <span style=color:#666>:=</span> <span style=color:#007020;font-weight:700>range</span> inputs {
+</span></span><span style=display:flex><span>		x, n <span style=color:#666>:=</span> binary.<span style=color:#06287e>Uvarint</span>(b)
+</span></span><span style=display:flex><span>		<span style=color:#007020;font-weight:700>if</span> n <span style=color:#666>!=</span> <span style=color:#007020>len</span>(b) {
+</span></span><span style=display:flex><span>			fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;Uvarint did not consume all of in when decoding:[% x], x = %d, n = %d\n&#34;</span>, b, x, n)
+</span></span><span style=display:flex><span>		} <span style=color:#007020;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>			fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;0x%x\n&#34;</span>, x)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>0x1
+</span></span><span style=display:flex><span>0x2
+</span></span><span style=display:flex><span>0x7f
+</span></span><span style=display:flex><span>0x80
+</span></span><span style=display:flex><span>0xff
+</span></span><span style=display:flex><span>0x100
+</span></span><span style=display:flex><span>Uvarint did not consume all of in when decoding:[80 80], x = 0, n = 0
+</span></span><span style=display:flex><span>Uvarint did not consume all of in when decoding:[08 80], x = 8, n = 1
+</span></span><span style=display:flex><span>Uvarint did not consume all of in when decoding:[88 80 88 80 88 80 88 80 88 80 77], x = 0, n = -11
+</span></span></code></pre></div><h3 id=putvarint>PutVarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>PutVarint</span>(buf []<span style=color:#902000>byte</span>, x <span style=color:#902000>int64</span>) <span style=color:#902000>int</span>
+</span></span></code></pre></div><p>本函数功能同<code>PutUvarint</code>，只是编码的整型类型是 <code>int64</code>。</p><h3 id=appenduvarint>AppendUvarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>AppendUvarint</span>(buf []<span style=color:#902000>byte</span>, x <span style=color:#902000>uint64</span>) []<span style=color:#902000>byte</span>
+</span></span></code></pre></div><p><code>AppendUvarint</code> 将由 <code>PutUvarint</code> 生成的 <code>x</code> 的变长编码追加到 <code>buf</code> 中， 并返回扩展后的 <code>buf</code>。</p><h3 id=appendvarint>AppendVarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>AppendVarint</span>(buf []<span style=color:#902000>byte</span>, x <span style=color:#902000>int64</span>) []<span style=color:#902000>byte</span>
+</span></span></code></pre></div><p>本函数功能同 <code>AppendUvarint</code> ，只是针对 <code>int64</code> 类的进行编码追加。</p><h3 id=readuvarint>ReadUvarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>ReadUvarint</span>(r io.ByteReader) (<span style=color:#902000>uint64</span>, <span style=color:#902000>error</span>)
+</span></span></code></pre></div><p>本函数功能同 <code>Uvarint()</code>，只是读取数据是通过 <code>io.ByteReader</code> 进行，而不是直接传入 <code>[]byte</code> 类型的参数。如果没能读取到任何字节，那么 <code>error</code> 的值是 <code>EOF</code> ，如果已经读取了部分数据然后遇到 <code>EOF</code>并且没有读取到所有需要的数据，那么将返回 <code>io.ErrUnexpectedEOF</code>。</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>package</span> main
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;bytes&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;encoding/binary&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#4070a0>&#34;fmt&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>main</span>() {
+</span></span><span style=display:flex><span>	inputs <span style=color:#666>:=</span> [][]<span style=color:#902000>byte</span>{
+</span></span><span style=display:flex><span>		{<span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x02</span>}, <span style=color:#60a0b0;font-style:italic>// 正常解析
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>		{<span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x80</span>}, <span style=color:#60a0b0;font-style:italic>// 还需要数据，但已经没有数据可以读取
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>		{<span style=color:#40a070>0x08</span>, <span style=color:#40a070>0x08</span>}, <span style=color:#60a0b0;font-style:italic>// 有多余的数据
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>		{<span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x88</span>, <span style=color:#40a070>0x80</span>, <span style=color:#40a070>0x77</span>}, <span style=color:#60a0b0;font-style:italic>// 数值太大溢出
+</span></span></span><span style=display:flex><span><span style=color:#60a0b0;font-style:italic></span>	}
+</span></span><span style=display:flex><span>	<span style=color:#007020;font-weight:700>for</span> _, b <span style=color:#666>:=</span> <span style=color:#007020;font-weight:700>range</span> inputs {
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>		x, err <span style=color:#666>:=</span> binary.<span style=color:#06287e>ReadUvarint</span>(bytes.<span style=color:#06287e>NewReader</span>(b))
+</span></span><span style=display:flex><span>		<span style=color:#007020;font-weight:700>if</span> err <span style=color:#666>!=</span> <span style=color:#007020;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>			fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;Uvarint did not consume all of in when decoding:[% x], x = %d, err = %v\n&#34;</span>, b, x, err)
+</span></span><span style=display:flex><span>		} <span style=color:#007020;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>			fmt.<span style=color:#06287e>Printf</span>(<span style=color:#4070a0>&#34;0x%x\n&#34;</span>, x)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>输出：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-plain data-lang=plain><span style=display:flex><span>0x100
+</span></span><span style=display:flex><span>Uvarint did not consume all of in when decoding:[80 80], x = 0, err = unexpected EOF
+</span></span><span style=display:flex><span>0x8
+</span></span><span style=display:flex><span>Uvarint did not consume all of in when decoding:[88 80 88 80 88 80 88 80 88 80 77], x = 576495938823127048, err = binary: varint overflows a 64-bit integer
+</span></span></code></pre></div><h3 id=readvarint>ReadVarint</h3><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>func</span> <span style=color:#06287e>ReadVarint</span>(r io.ByteReader) (<span style=color:#902000>int64</span>, <span style=color:#902000>error</span>)
+</span></span></code></pre></div><p>本函数功能同 <code>ReadUvarint</code>。与 <code>ReadUvarint</code> 的区别是本函数是解析 <code>int64</code> 类型的值。</p><h2 id=byteorder与appendbyteorder>ByteOrder与AppendByteOrder</h2><p><code>ByteOrder</code> 与 <code>AppendByteOrder</code> 都是接口类型。 它们的定义如下：</p><div class=highlight><pre tabindex=0 style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> ByteOrder <span style=color:#007020;font-weight:700>interface</span> {
+</span></span><span style=display:flex><span>    <span style=color:#06287e>Uint16</span>([]<span style=color:#902000>byte</span>) <span style=color:#902000>uint16</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>Uint32</span>([]<span style=color:#902000>byte</span>) <span style=color:#902000>uint32</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>Uint64</span>([]<span style=color:#902000>byte</span>) <span style=color:#902000>uint64</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>PutUint16</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint16</span>)
+</span></span><span style=display:flex><span>    <span style=color:#06287e>PutUint32</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint32</span>)
+</span></span><span style=display:flex><span>    <span style=color:#06287e>PutUint64</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint64</span>)
+</span></span><span style=display:flex><span>    <span style=color:#06287e>String</span>() <span style=color:#902000>string</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#007020;font-weight:700>type</span> AppendByteOrder <span style=color:#007020;font-weight:700>interface</span> {
+</span></span><span style=display:flex><span>    <span style=color:#06287e>AppendUint16</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint16</span>) []<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>AppendUint32</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint32</span>) []<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>AppendUint64</span>([]<span style=color:#902000>byte</span>, <span style=color:#902000>uint64</span>) []<span style=color:#902000>byte</span>
+</span></span><span style=display:flex><span>    <span style=color:#06287e>String</span>() <span style=color:#902000>string</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>包里有两个变量，一个是变量是 <code>BigEndian</code> 另一个是 <code>LittleEndian</code> 。 这两个变量都是定义成 <code>struct {}</code> 空结构体的类型，只要用这类型变量实现接口函数即可，而不用关心这个变量具体的值。</p><p><code>BigEndian</code> 变量类型是 <code>bigEndian</code> ，相应的 <code>LitlleEndian</code> 的类型是 <code>littleEdian</code> 。这两个变量都是大写的，可以导出使用，而这两个变量的类型都是小写的，只能在 binary 包内部使用。</p><p>这两种类型的变量都分别实现了两个接口 <code>ByteOrder</code> 和 <code>AppendByteOrder</code> 。如果当前字节序变量不能满足需求，可以自己定义一个类型 <code>type MyOrder struct {}</code> ，然后实现这两个接口。在这个包里只有 <code>binary.Read</code> 和 <code>binary.Write</code> 这两个函数用到这个变量。</p><h2 id=总结>总结</h2><ol><li>binary包只能处理固定大小的类型。</li><li>binary更倾向于易用，不适合用在有高性能需求的场景。</li><li>Read/Write函数都是对io进行读写，如果需要处理 <code>[]byte</code> 类型，需要借助 <code>bytes.NewReader</code> 或 <code>new(bytes.Buffer)</code> 来处理。</li><li>如果要处理 <code>struct</code> 类型，成员必须是可导出（首字母大小）类型</li><li>只有 go1.19及以后版本才能使用 <code>AppendUvarint</code>、<code>AppendVarint</code>、<code>AppendByteOrder</code></li><li>针对简单类型的二进制转换，可以直接调用类似 <code>binary.BigEndian.PutUint16()</code> 或 <code>binary.BigEndian.Uint16</code> 这样的函数进行编解码。如果需要在原有 <code>buf</code> 中进行追加，可以调用 <code>binary.BigEndian.AppendUint16</code> 函数来实现。</li></ol></div><div class=page-nav><a href=/posts/hugo-show-buddle-img.html class="nav-btn page-next">hugo 显相对路径下的图片</a>
+<a href=/posts/round_pow2-%E5%87%BD%E6%95%B0%E5%88%86%E6%9E%90.html class="nav-btn page-prev">round_pow2 函数分析</a></div><div class=comment style=clear:both;margin-top:5em></div></div></div></div><div class=footer><div class=copyright>@2019 <a href=https://leenzhu.com>LeenZhu</a></div><div class=powered_by>Power by <a href=http://www.gohugo.io/>Hugo</a>,
+using <a href=https://github.com/leenzhu/hugo-theme-sun>Sun</a> Theme</div></div></body></html>
